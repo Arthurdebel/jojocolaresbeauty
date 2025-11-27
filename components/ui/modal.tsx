@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
@@ -14,6 +14,11 @@ interface ModalProps {
 }
 
 export function Modal({ isOpen, onClose, title, children }: ModalProps) {
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
     useEffect(() => {
         const handleEsc = (e: KeyboardEvent) => {
             if (e.key === 'Escape') onClose();
@@ -33,6 +38,8 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
             document.body.style.overflow = 'unset';
         };
     }, [isOpen]);
+
+    if (!mounted) return null;
 
     return createPortal(
         <AnimatePresence>
