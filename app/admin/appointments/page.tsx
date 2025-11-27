@@ -34,8 +34,23 @@ export default function AppointmentsPage() {
         }
     }, [appointments, filterStatus]);
 
-    const updateStatus = async (id: string, status: 'confirmed' | 'cancelled' | 'pending') => {
-        await updateDoc(doc(db, 'appointments', id), { status });
+    const updateStatus = async (appointment: Appointment, status: 'confirmed' | 'cancelled' | 'pending') => {
+        await updateDoc(doc(db, 'appointments', appointment.id), { status });
+
+        if (status === 'confirmed' || status === 'cancelled') {
+            const date = format(parseISO(appointment.date), "dd 'de' MMMM", { locale: ptBR });
+            const services = appointment.services.map(s => s.name).join(', ');
+            
+            let message = '';
+            if (status === 'confirmed') {
+                message = `Olá ${appointment.clientName}! Seu agendamento para *${services}* no dia *${date}* às *${appointment.time}* foi *CONFIRMADO*! Estamos ansiosos para te atender. ✨`;
+            } else {
+                message = `Olá ${appointment.clientName}. Informamos que seu agendamento para *${services}* no dia *${date}* às *${appointment.time}* foi *CANCELADO*. Caso queira reagendar, entre em contato.`;
+            }
+
+            const encodedMessage = encodeURIComponent(message);
+            window.open(`https://wa.me/${appointment.phone}?text=${encodedMessage}`, '_blank');
+        }
     };
 
     const deleteAppointment = async (id: string) => {
@@ -197,7 +212,7 @@ export default function AppointmentsPage() {
                                             <>
                                                 <Button
                                                     size="sm"
-                                                    onClick={() => updateStatus(appointment.id, 'confirmed')}
+                                                    onClick={() => updateStatus(appointment, 'confirmed')}
                                                     className="bg-green-600 hover:bg-green-700"
                                                 >
                                                     <CheckCircle className="h-4 w-4 mr-1" />
@@ -206,7 +221,7 @@ export default function AppointmentsPage() {
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
-                                                    onClick={() => updateStatus(appointment.id, 'cancelled')}
+                                                    onClick={() => updateStatus(appointment, 'cancelled')}
                                                     className="border-red-300 text-red-600 hover:bg-red-50"
                                                 >
                                                     <XCircle className="h-4 w-4 mr-1" />
@@ -218,7 +233,7 @@ export default function AppointmentsPage() {
                                             <Button
                                                 size="sm"
                                                 variant="outline"
-                                                onClick={() => updateStatus(appointment.id, 'cancelled')}
+                                                onClick={() => updateStatus(appointment, 'cancelled')}
                                                 className="border-red-300 text-red-600 hover:bg-red-50"
                                             >
                                                 <XCircle className="h-4 w-4 mr-1" />
@@ -229,7 +244,7 @@ export default function AppointmentsPage() {
                                             <Button
                                                 size="sm"
                                                 variant="outline"
-                                                onClick={() => updateStatus(appointment.id, 'pending')}
+                                                onClick={() => updateStatus(appointment, 'pending')}
                                             >
                                                 Reabrir
                                             </Button>

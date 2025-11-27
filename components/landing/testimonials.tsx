@@ -1,30 +1,37 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { Testimonial } from '@/types';
 import { motion } from 'framer-motion';
 import { Quote } from 'lucide-react';
 
-const testimonials = [
-    {
-        id: 1,
-        name: 'Ana Silva',
-        role: 'Noiva',
-        text: 'A Jojo transformou meu dia. A maquiagem ficou impecável e durou a festa inteira. Me senti uma verdadeira rainha.',
-    },
-    {
-        id: 2,
-        name: 'Beatriz Costa',
-        role: 'Modelo',
-        text: 'Profissionalismo e técnica inigualáveis. O resultado foi natural e sofisticado, exatamente como eu queria.',
-    },
-    {
-        id: 3,
-        name: 'Carla Dias',
-        role: 'Cliente Mensal',
-        text: 'Faço minhas sobrancelhas há anos e não troco por nada. O design é perfeito para o meu rosto.',
-    },
-];
-
 export function Testimonials() {
+    const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchTestimonials = async () => {
+            try {
+                const q = query(collection(db, 'testimonials'), orderBy('createdAt', 'desc'), limit(3));
+                const snap = await getDocs(q);
+                const items = snap.docs.map(d => ({ id: d.id, ...d.data() } as Testimonial));
+                setTestimonials(items);
+            } catch (error) {
+                console.error('Error fetching testimonials:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchTestimonials();
+    }, []);
+
+    if (loading) return null;
+
+    if (testimonials.length === 0) return null;
+
     return (
         <section className="py-24 bg-secondary/30 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />

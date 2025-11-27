@@ -25,3 +25,19 @@ export interface Appointment {
     paymentMethod: 'pix' | 'cartao' | 'dinheiro';
     createdAt: number; // timestamp
 }
+
+export interface PortfolioItem {
+    id: string;
+    title: string;
+    category: string;
+    imageUrl: string;
+    createdAt?: number;
+}
+
+export interface Testimonial {
+    id: string;
+    name: string;
+    role: string;
+    text: string;
+    createdAt?: number;
+}

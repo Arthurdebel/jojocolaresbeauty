@@ -1,15 +1,36 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { PortfolioItem } from '@/types';
 import { motion } from 'framer-motion';
 
-const portfolioItems = [
-    { id: 1, src: '/images/portfolio-1.png', category: 'Maquiagem', title: 'Glow Natural' },
-    { id: 2, src: '/images/portfolio-2.png', category: 'Penteado', title: 'Coque Clássico' },
-    { id: 3, src: '/images/portfolio-3.png', category: 'Sobrancelhas', title: 'Design & Henna' },
-    { id: 4, src: '/images/hero-bg.png', category: 'Estúdio', title: 'Ambiente' },
-];
-
 export function Portfolio() {
+    const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchPortfolio = async () => {
+            try {
+                const q = query(collection(db, 'portfolio'), orderBy('createdAt', 'desc'), limit(8));
+                const snap = await getDocs(q);
+                const items = snap.docs.map(d => ({ id: d.id, ...d.data() } as PortfolioItem));
+                setPortfolioItems(items);
+            } catch (error) {
+                console.error('Error fetching portfolio:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchPortfolio();
+    }, []);
+
+    if (loading) return null;
+
+    if (portfolioItems.length === 0) return null;
+
     return (
         <section className="py-32 bg-background">
             <div className="container mx-auto px-4">
@@ -36,7 +57,7 @@ export function Portfolio() {
                             className={`group relative overflow-hidden aspect-[3/4] cursor-pointer ${index === 1 || index === 2 ? 'md:mt-12' : ''}`}
                         >
                             <img
-                                src={item.src}
+                                src={item.imageUrl}
                                 alt={item.title}
                                 className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-105 grayscale-[20%] group-hover:grayscale-0"
                             />
