@@ -27,8 +27,8 @@ export default function AgendarPage() {
     const [clientCity, setClientCity] = useState('');
     const [clientState, setClientState] = useState('');
     const [serviceType, setServiceType] = useState<'studio' | 'domicilio'>('studio');
-    const [hairType, setHairType] = useState('');
     const [paymentMethod, setPaymentMethod] = useState<'pix' | 'cartao' | 'dinheiro'>('pix');
+    const [formAnswers, setFormAnswers] = useState<Record<string, string>>({});
 
     const [loading, setLoading] = useState(false);
     const [workingHours, setWorkingHours] = useState({ start: '09:00', end: '18:00' });
@@ -61,14 +61,6 @@ export default function AgendarPage() {
     // Calculate totals
     const totalDuration = selectedServices.reduce((acc, s) => acc + s.duration, 0);
     const basePrice = selectedServices.reduce((acc, s) => acc + s.price, 0);
-    const domicilioFee = serviceType === 'domicilio' ? 50 : 0;
-    const totalPrice = basePrice + domicilioFee;
-
-    // Check if penteado is selected
-    const hasPenteado = selectedServices.some(s =>
-        s.name.toLowerCase().includes('penteado') ||
-        s.name.toLowerCase().includes('cabelo')
-    );
 
     // Fetch slots when date changes
     useEffect(() => {
@@ -145,11 +137,37 @@ export default function AgendarPage() {
     const toggleService = (service: Service) => {
         if (selectedServices.find(s => s.id === service.id)) {
             setSelectedServices(selectedServices.filter(s => s.id !== service.id));
+            // Remove answers for this service
+            const newAnswers = { ...formAnswers };
+            service.formFields?.forEach(field => {
+                delete newAnswers[`${service.id}_${field.id}`];
+            });
+            setFormAnswers(newAnswers);
         } else {
             setSelectedServices([...selectedServices, service]);
         }
         setSelectedTime(null);
         setSelectedDate(null);
+    };
+
+    const handleAnswerChange = (serviceId: string, fieldId: string, value: string) => {
+        setFormAnswers(prev => ({
+            ...prev,
+            [`${serviceId}_${fieldId}`]: value
+        }));
+    };
+
+    const validateForms = () => {
+        for (const service of selectedServices) {
+            if (service.formFields) {
+                for (const field of service.formFields) {
+                    if (field.required && !formAnswers[`${service.id}_${field.id}`]) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
     };
 
     const handleBooking = async () => {
@@ -158,8 +176,8 @@ export default function AgendarPage() {
             return;
         }
 
-        if (hasPenteado && !hairType) {
-            alert('Por favor, informe o tipo de cabelo para o serviço de penteado.');
+        if (!validateForms()) {
+            alert('Por favor, preencha todos os campos obrigatórios dos serviços selecionados.');
             return;
         }
 
@@ -174,21 +192,33 @@ export default function AgendarPage() {
                 state: clientState,
                 services: selectedServices,
                 totalDuration,
-                totalPrice,
+                totalPrice: 0, // Price is calculated by attendant
                 basePrice,
                 date: dateStr,
                 time: selectedTime,
                 status: 'pending' as const,
                 serviceType,
-                hairType: hasPenteado ? hairType : undefined,
                 paymentMethod,
+                formAnswers,
                 createdAt: Date.now(),
             };
 
             await addDoc(collection(db, 'appointments'), appointmentData);
 
             // WhatsApp Redirect with professional message
-            const servicesText = selectedServices.map(s => `  • ${s.name} (${s.duration}min) - R$ ${s.price}`).join('\n');
+            const servicesText = selectedServices.map(s => {
+                let text = `  • ${s.name} (${s.duration}min)`;
+                if (s.formFields && s.formFields.length > 0) {
+                    s.formFields.forEach(field => {
+                        const answer = formAnswers[`${s.id}_${field.id}`];
+                        if (answer) {
+                            text += `\n    - ${field.label}: ${answer}`;
+                        }
+                    });
+                }
+                return text;
+            }).join('\n');
+
             const message = `🌸 *SOLICITAÇÃO DE AGENDAMENTO* 🌸
 
 📋 *DADOS DO CLIENTE*
@@ -205,15 +235,14 @@ Horário: ${selectedTime}
 Duração Total: ${Math.ceil(totalDuration / 60)}h
 
 📍 *LOCAL DO ATENDIMENTO*
-${serviceType === 'studio' ? '🏠 Studio' : '🚗 Domicílio (+R$ 50,00)'}
+${serviceType === 'studio' ? '🏠 Studio' : '🚗 Domicílio'}
 ${serviceType === 'domicilio' ? '\n⚠️ *Áreas de atendimento a consultar*' : ''}
 
-${hasPenteado ? `💇 *TIPO DE CABELO*\n${hairType}\n\n` : ''}💳 *FORMA DE PAGAMENTO*
+💳 *FORMA DE PAGAMENTO*
 ${paymentMethod === 'pix' ? '💰 PIX' : paymentMethod === 'cartao' ? '💳 Cartão' : '💵 Dinheiro'}
 
 💰 *VALORES*
-Serviços: R$ ${basePrice.toFixed(2)}
-${serviceType === 'domicilio' ? `Taxa Domicílio: R$ 50,00\n` : ''}*TOTAL: R$ ${totalPrice.toFixed(2)}*
+*A confirmar com a atendente*
 
 ---
 ✨ Aguardando confirmação do agendamento!`;
@@ -273,7 +302,7 @@ ${serviceType === 'domicilio' ? `Taxa Domicílio: R$ 50,00\n` : ''}*TOTAL: R$ ${
                                         <div className="flex-1">
                                             <h3 className="font-bold text-lg font-serif">{service.name}</h3>
                                             <p className="text-sm text-muted-foreground line-clamp-2">{service.description}</p>
-                                            <div className="text-sm font-medium mt-1 text-primary">R$ {service.price} • {service.duration} min</div>
+                                            <div className="text-sm font-medium mt-1 text-primary">A partir de R$ {service.price} • {service.duration} min</div>
                                         </div>
                                         <div className={`w-6 h-6 rounded-full border flex items-center justify-center transition-colors ${selectedServices.find(s => s.id === service.id) ? 'bg-primary border-primary' : 'border-muted-foreground'
                                             }`}>
@@ -375,7 +404,7 @@ ${serviceType === 'domicilio' ? `Taxa Domicílio: R$ 50,00\n` : ''}*TOTAL: R$ ${
                                                     <div className="text-center">
                                                         <div className="text-2xl mb-2">🚗</div>
                                                         <div className="font-semibold">Domicílio</div>
-                                                        <div className="text-xs text-primary mt-1">+ R$ 50,00</div>
+                                                        <div className="text-xs text-primary mt-1">+ Taxa de Deslocamento</div>
                                                     </div>
                                                 </button>
                                             </div>
@@ -386,20 +415,50 @@ ${serviceType === 'domicilio' ? `Taxa Domicílio: R$ 50,00\n` : ''}*TOTAL: R$ ${
                                             )}
                                         </div>
 
-                                        {hasPenteado && (
-                                            <div className="pt-4 border-t border-primary/10">
-                                                <label className="text-sm font-medium mb-3 flex items-center gap-2">
-                                                    <Scissors className="w-4 h-4 text-primary" />
-                                                    Tipo de Cabelo * (para penteado)
-                                                </label>
-                                                <Input
-                                                    value={hairType}
-                                                    onChange={e => setHairType(e.target.value)}
-                                                    placeholder="Ex: Liso, Ondulado, Cacheado, Crespo..."
-                                                    className="bg-white"
-                                                />
-                                            </div>
-                                        )}
+                                        {/* Dynamic Service Forms */}
+                                        {selectedServices.map(service => (
+                                            service.formFields && service.formFields.length > 0 && (
+                                                <div key={service.id} className="pt-4 border-t border-primary/10">
+                                                    <h4 className="text-sm font-bold text-primary mb-3 flex items-center gap-2">
+                                                        <Scissors className="w-4 h-4" />
+                                                        Detalhes: {service.name}
+                                                    </h4>
+                                                    <div className="space-y-4">
+                                                        {service.formFields.map(field => (
+                                                            <div key={field.id} className="space-y-2">
+                                                                <label className="text-sm font-medium">
+                                                                    {field.label} {field.required && '*'}
+                                                                </label>
+                                                                {field.type === 'select' ? (
+                                                                    <select
+                                                                        value={formAnswers[`${service.id}_${field.id}`] || ''}
+                                                                        onChange={e => handleAnswerChange(service.id, field.id, e.target.value)}
+                                                                        className="flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                                                    >
+                                                                        <option value="">Selecione...</option>
+                                                                        {field.options?.map(opt => (
+                                                                            <option key={opt} value={opt}>{opt}</option>
+                                                                        ))}
+                                                                    </select>
+                                                                ) : field.type === 'textarea' ? (
+                                                                    <textarea
+                                                                        value={formAnswers[`${service.id}_${field.id}`] || ''}
+                                                                        onChange={e => handleAnswerChange(service.id, field.id, e.target.value)}
+                                                                        className="flex min-h-[80px] w-full rounded-md border border-input bg-white px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                                                    />
+                                                                ) : (
+                                                                    <Input
+                                                                        value={formAnswers[`${service.id}_${field.id}`] || ''}
+                                                                        onChange={e => handleAnswerChange(service.id, field.id, e.target.value)}
+                                                                        className="bg-white"
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )
+                                        ))}
 
                                         <div className="pt-4 border-t border-primary/10">
                                             <label className="text-sm font-medium mb-3 flex items-center gap-2">
@@ -529,19 +588,19 @@ ${serviceType === 'domicilio' ? `Taxa Domicílio: R$ 50,00\n` : ''}*TOTAL: R$ ${
                                                     {selectedServices.map(s => (
                                                         <div key={s.id} className="flex justify-between text-sm">
                                                             <span>{s.name}</span>
-                                                            <span className="font-medium">R$ {s.price}</span>
+                                                            <span className="font-medium">A partir de R$ {s.price}</span>
                                                         </div>
                                                     ))}
                                                     {serviceType === 'domicilio' && (
                                                         <div className="flex justify-between text-sm text-amber-700">
                                                             <span>Taxa Domicílio</span>
-                                                            <span className="font-medium">+ R$ 50</span>
+                                                            <span className="font-medium">A consultar</span>
                                                         </div>
                                                     )}
                                                 </div>
                                                 <div className="flex justify-between font-bold text-lg pt-4 border-t border-primary/10">
                                                     <span>Total</span>
-                                                    <span className="text-primary">R$ {totalPrice}</span>
+                                                    <span className="text-primary text-sm font-normal">A combinar</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -556,7 +615,7 @@ ${serviceType === 'domicilio' ? `Taxa Domicílio: R$ 50,00\n` : ''}*TOTAL: R$ ${
                                             <Button
                                                 className="w-full text-lg h-14 rounded-xl shadow-lg hover:shadow-xl transition-all bg-primary text-primary-foreground hover:bg-primary/90"
                                                 onClick={handleBooking}
-                                                disabled={loading || (hasPenteado && !hairType)}
+                                                disabled={loading}
                                             >
                                                 {loading ? 'Processando...' : 'Enviar Solicitação via WhatsApp'}
                                             </Button>

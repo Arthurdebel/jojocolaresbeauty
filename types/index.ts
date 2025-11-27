@@ -1,3 +1,11 @@
+export interface ServiceFormField {
+    id: string;
+    label: string;
+    type: 'text' | 'select' | 'textarea';
+    required: boolean;
+    options?: string[]; // for select type
+}
+
 export interface Service {
     id: string;
     name: string;
@@ -5,6 +13,7 @@ export interface Service {
     duration: number; // in minutes
     description?: string;
     imageUrl?: string;
+    formFields?: ServiceFormField[];
 }
 
 export interface Appointment {
@@ -21,8 +30,8 @@ export interface Appointment {
     time: string; // HH:mm
     status: 'pending' | 'confirmed' | 'cancelled';
     serviceType: 'studio' | 'domicilio';
-    hairType?: string; // obrigatório se penteado selecionado
     paymentMethod: 'pix' | 'cartao' | 'dinheiro';
+    formAnswers?: Record<string, string>; // answers to dynamic service forms: { "serviceId_fieldId": "answer" }
     createdAt: number; // timestamp
 }
 

@@ -77,7 +77,7 @@ export function ServicesDisplay() {
                                     <div className="flex-1 text-center md:text-left space-y-3">
                                         <div className="flex flex-col md:flex-row justify-between items-center md:items-start gap-2">
                                             <h3 className="text-xl font-serif font-medium group-hover:text-primary transition-colors">{service.name}</h3>
-                                            <span className="text-lg font-medium text-muted-foreground">R$ {service.price}</span>
+                                            <span className="text-lg font-medium text-muted-foreground whitespace-nowrap">A partir de R$ {service.price}</span>
                                         </div>
                                         <p className="text-muted-foreground text-sm leading-relaxed font-light">{service.description}</p>
                                         <div className="pt-2">

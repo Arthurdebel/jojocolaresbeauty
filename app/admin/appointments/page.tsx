@@ -175,21 +175,36 @@ export default function AppointmentsPage() {
                                         </div>
                                         <div className="flex items-center gap-2 text-gray-700">
                                             <DollarSign className="h-5 w-5 text-primary" />
-                                            <span className="font-medium">R$ {appointment.totalPrice}</span>
+                                            <span className="font-medium">A partir de R$ {appointment.basePrice || appointment.totalPrice}</span>
                                         </div>
                                     </div>
 
                                     {/* Services */}
                                     <div>
                                         <p className="text-sm font-medium text-gray-600 mb-2">Serviços:</p>
-                                        <div className="flex flex-wrap gap-2">
+                                        <div className="flex flex-col gap-2">
                                             {appointment.services?.map((service, idx) => (
-                                                <span
-                                                    key={idx}
-                                                    className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"
-                                                >
-                                                    {service.name} ({service.duration}min)
-                                                </span>
+                                                <div key={idx} className="bg-primary/5 rounded-lg p-3">
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <span className="font-medium text-primary">{service.name}</span>
+                                                        <span className="text-xs text-gray-500">{service.duration}min</span>
+                                                    </div>
+                                                    {/* Display Form Answers for this service */}
+                                                    {service.formFields && service.formFields.length > 0 && appointment.formAnswers && (
+                                                        <div className="mt-2 space-y-1 pl-2 border-l-2 border-primary/20">
+                                                            {service.formFields.map(field => {
+                                                                const answer = appointment.formAnswers?.[`${service.id}_${field.id}`];
+                                                                if (!answer) return null;
+                                                                return (
+                                                                    <div key={field.id} className="text-sm">
+                                                                        <span className="text-gray-500 text-xs uppercase tracking-wider">{field.label}:</span>
+                                                                        <span className="ml-2 text-gray-800">{answer}</span>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             ))}
                                         </div>
                                     </div>
