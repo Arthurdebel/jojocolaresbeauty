@@ -1,19 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, where } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Appointment } from '@/types';
 import { Button } from '@/components/ui/button';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar, Clock, DollarSign, Phone, CheckCircle, XCircle, Eye, Trash2, Filter } from 'lucide-react';
+import { Calendar, Clock, DollarSign, Phone, CheckCircle, XCircle, Trash2, Filter } from 'lucide-react';
 
 export default function AppointmentsPage() {
     const [appointments, setAppointments] = useState<Appointment[]>([]);
-    const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
     const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'confirmed' | 'cancelled'>('all');
-    const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -26,13 +24,9 @@ export default function AppointmentsPage() {
         return () => unsubscribe();
     }, []);
 
-    useEffect(() => {
-        if (filterStatus === 'all') {
-            setFilteredAppointments(appointments);
-        } else {
-            setFilteredAppointments(appointments.filter(a => a.status === filterStatus));
-        }
-    }, [appointments, filterStatus]);
+    const filteredAppointments = filterStatus === 'all'
+        ? appointments
+        : appointments.filter(a => a.status === filterStatus);
 
     const updateStatus = async (appointment: Appointment, status: 'confirmed' | 'cancelled' | 'pending') => {
         await updateDoc(doc(db, 'appointments', appointment.id), { status });
@@ -40,7 +34,7 @@ export default function AppointmentsPage() {
         if (status === 'confirmed' || status === 'cancelled') {
             const date = format(parseISO(appointment.date), "dd 'de' MMMM", { locale: ptBR });
             const services = appointment.services.map(s => s.name).join(', ');
-            
+
             let message = '';
             if (status === 'confirmed') {
                 message = `Olá ${appointment.clientName}! Seu agendamento para *${services}* no dia *${date}* às *${appointment.time}* foi *CONFIRMADO*! Estamos ansiosos para te atender. ✨`;

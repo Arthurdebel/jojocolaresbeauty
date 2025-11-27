@@ -7,7 +7,7 @@ import { Service, Appointment } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { format, addDays, isSameDay, startOfDay, isAfter, isBefore } from 'date-fns';
+import { format, isSameDay, startOfDay, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Check, Calendar, Clock, User, MapPin, CreditCard, Scissors } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -20,7 +20,6 @@ export default function AgendarPage() {
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedTime, setSelectedTime] = useState<string | null>(null);
     const [availableSlots, setAvailableSlots] = useState<string[]>([]);
-    const [fullyBookedDates, setFullyBookedDates] = useState<Date[]>([]);
 
     // Form fields
     const [clientName, setClientName] = useState('');
@@ -77,7 +76,7 @@ export default function AgendarPage() {
 
         if (!selectedDate || totalDuration === 0) {
             console.log('⚠️ No date or duration, clearing slots');
-            setAvailableSlots([]);
+            setAvailableSlots(prev => prev.length > 0 ? [] : prev);
             return;
         }
 
@@ -142,12 +141,6 @@ export default function AgendarPage() {
 
         fetchSlots();
     }, [selectedDate, totalDuration, workingHours]);
-
-    // Calculate fully booked dates - DESABILITADO TEMPORARIAMENTE
-    useEffect(() => {
-        // Não bloquear nenhuma data por enquanto
-        setFullyBookedDates([]);
-    }, [totalDuration, selectedServices, workingHours]);
 
     const toggleService = (service: Service) => {
         if (selectedServices.find(s => s.id === service.id)) {
@@ -233,10 +226,6 @@ ${serviceType === 'domicilio' ? `Taxa Domicílio: R$ 50,00\n` : ''}*TOTAL: R$ ${
             alert('Erro ao agendar. Por favor, tente novamente.');
             setLoading(false);
         }
-    };
-
-    const isDateFullyBooked = (date: Date) => {
-        return fullyBookedDates.some(d => isSameDay(d, date));
     };
 
     const filterDate = (date: Date) => {
@@ -487,7 +476,7 @@ ${serviceType === 'domicilio' ? `Taxa Domicílio: R$ 50,00\n` : ''}*TOTAL: R$ ${
                                     {availableSlots.map(time => (
                                         <Button
                                             key={time}
-                                            variant={selectedTime === time ? 'default' : 'outline'}
+                                            variant={selectedTime === time ? 'primary' : 'outline'}
                                             onClick={() => setSelectedTime(time)}
                                             className={`h-12 text-lg ${selectedTime === time ? 'shadow-md scale-105' : 'hover:border-primary/50'}`}
                                         >

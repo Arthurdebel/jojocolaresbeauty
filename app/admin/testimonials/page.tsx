@@ -101,7 +101,7 @@ export default function AdminTestimonials() {
 
                             <MessageSquareQuote className="h-8 w-8 text-primary/20" />
 
-                            <p className="text-gray-600 italic">"{item.text}"</p>
+                            <p className="text-gray-600 italic">&quot;{item.text}&quot;</p>
 
                             <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
                                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">

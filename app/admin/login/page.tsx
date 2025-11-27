@@ -23,7 +23,7 @@ export default function AdminLogin() {
         try {
             await signInWithEmailAndPassword(auth, email, password);
             router.push('/admin/dashboard');
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
             setError('Email ou senha incorretos. Tente novamente.');
         } finally {

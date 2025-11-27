@@ -54,7 +54,7 @@ export function Testimonials() {
                         >
                             <Quote className="w-10 h-10 text-primary/20 mb-6 group-hover:text-primary/40 transition-colors" />
                             <p className="text-muted-foreground font-light text-lg leading-relaxed mb-8 italic font-serif">
-                                "{item.text}"
+                                &quot;{item.text}&quot;
                             </p>
                             <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-primary font-serif font-bold">
