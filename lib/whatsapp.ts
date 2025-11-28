@@ -1,7 +1,7 @@
 export const WHATSAPP_API_KEY = '1KK2GjrAIUUTn3VDPzhhqc1jTrOGcW';
 // TODO: Replace with the actual sender number connected to whaply.top
 export const WHATSAPP_SENDER = '5521977108169';
-export const ADMIN_PHONE = '5521979485161';
+export const ADMIN_PHONE = '553898276288';
 export const WHATSAPP_API_URL = 'https://whaply.top';
 
 interface SendVCardParams {

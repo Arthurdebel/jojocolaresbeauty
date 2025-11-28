@@ -170,9 +170,21 @@ export default function AgendarPage() {
         return true;
     };
 
+    const validatePhone = (phone: string) => {
+        const clean = phone.replace(/\D/g, '');
+        // Must start with 55, have 2 digit DDD, and 8 or 9 digit number.
+        // Total length: 2 (country) + 2 (ddd) + 8/9 (number) = 12 or 13.
+        return /^55\d{10,11}$/.test(clean);
+    };
+
     const handleBooking = async () => {
         if (!selectedDate || !selectedTime || !clientName || !clientPhone || !clientCity || !clientState) {
             alert('Por favor, preencha todos os campos obrigatórios.');
+            return;
+        }
+
+        if (!validatePhone(clientPhone)) {
+            alert('Por favor, insira um número de WhatsApp válido no formato: 55 (DDD) 99999-9999.\nExemplo: 5521999999999\n\nÉ necessário incluir o código do país (55) e o DDD.');
             return;
         }
 
