@@ -35,15 +35,25 @@ export default function AppointmentsPage() {
             const date = format(parseISO(appointment.date), "dd 'de' MMMM", { locale: ptBR });
             const services = appointment.services.map(s => s.name).join(', ');
 
-            let message = '';
-            if (status === 'confirmed') {
-                message = `Olá ${appointment.clientName}! Seu agendamento para *${services}* no dia *${date}* às *${appointment.time}* foi *CONFIRMADO*! Estamos ansiosos para te atender. ✨`;
-            } else {
-                message = `Olá ${appointment.clientName}. Informamos que seu agendamento para *${services}* no dia *${date}* às *${appointment.time}* foi *CANCELADO*. Caso queira reagendar, entre em contato.`;
+            // Call API to send notifications
+            try {
+                await fetch('/api/appointments/update-status', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        clientName: appointment.clientName,
+                        clientPhone: appointment.phone,
+                        status,
+                        date,
+                        time: appointment.time,
+                        services
+                    })
+                });
+                alert(`Notificação de ${status === 'confirmed' ? 'confirmação' : 'cancelamento'} enviada para a cliente.`);
+            } catch (error) {
+                console.error('Erro ao enviar notificação:', error);
+                alert('Status atualizado, mas houve um erro ao enviar a notificação no WhatsApp.');
             }
-
-            const encodedMessage = encodeURIComponent(message);
-            window.open(`https://wa.me/${appointment.phone}?text=${encodedMessage}`, '_blank');
         }
     };
 

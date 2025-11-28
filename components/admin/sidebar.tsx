@@ -27,7 +27,7 @@ const navigation = [
     { name: 'Configurações', href: '/admin/settings', icon: Settings },
 ];
 
-export function AdminSidebar() {
+export function AdminSidebar({ className = '' }: { className?: string }) {
     const pathname = usePathname();
     const router = useRouter();
 
@@ -37,7 +37,7 @@ export function AdminSidebar() {
     };
 
     return (
-        <div className="flex h-screen w-64 flex-col bg-gradient-to-b from-gray-900 to-gray-800 text-white">
+        <div className={`flex h-screen w-64 flex-col bg-gradient-to-b from-gray-900 to-gray-800 text-white ${className}`}>
             {/* Logo */}
             <div className="flex h-20 items-center justify-center border-b border-gray-700 px-6">
                 <div className="flex items-center gap-2">

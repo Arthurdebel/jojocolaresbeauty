@@ -205,7 +205,7 @@ export default function AgendarPage() {
 
             await addDoc(collection(db, 'appointments'), appointmentData);
 
-            // WhatsApp Redirect with professional message
+            // Construct message for Admin (same format as before)
             const servicesText = selectedServices.map(s => {
                 let text = `  • ${s.name} (${s.duration}min)`;
                 if (s.formFields && s.formFields.length > 0) {
@@ -247,8 +247,33 @@ ${paymentMethod === 'pix' ? '💰 PIX' : paymentMethod === 'cartao' ? '💳 Cart
 ---
 ✨ Aguardando confirmação do agendamento!`;
 
-            const encodedMessage = encodeURIComponent(message);
-            window.location.href = `https://wa.me/553898276288?text=${encodedMessage}`;
+            // Call API to send notifications
+            await fetch('/api/appointments/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    clientName,
+                    clientPhone,
+                    message
+                })
+            });
+
+            // Show success feedback
+            setLoading(false);
+            // Reset form or redirect to success page
+            // For now, we'll use a custom UI state instead of alert
+            const successMessage = document.createElement('div');
+            successMessage.innerHTML = `
+                <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center;">
+                    <div style="background: white; padding: 2rem; border-radius: 1rem; text-align: center; max-width: 90%; width: 400px;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
+                        <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 0.5rem; color: #1a1a1a;">Solicitação Enviada!</h2>
+                        <p style="color: #666; margin-bottom: 1.5rem;">Recebemos seu agendamento. Em breve entraremos em contato pelo WhatsApp para confirmar.</p>
+                        <button onclick="window.location.reload()" style="background: #000; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: bold; cursor: pointer; width: 100%;">Entendido</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(successMessage);
 
         } catch (error) {
             console.error(error);
@@ -349,9 +374,12 @@ ${paymentMethod === 'pix' ? '💰 PIX' : paymentMethod === 'cartao' ? '💳 Cart
                                                 <Input
                                                     value={clientPhone}
                                                     onChange={e => setClientPhone(e.target.value)}
-                                                    placeholder="(00) 00000-0000"
+                                                    placeholder="55 (21) 99999-9999"
                                                     className="bg-white"
                                                 />
+                                                <p className="text-xs text-muted-foreground mt-1">
+                                                    * Digite o número completo com código do país (55) e DDD.
+                                                </p>
                                             </div>
                                             <div className="space-y-2">
                                                 <label className="text-sm font-medium flex items-center gap-2">
